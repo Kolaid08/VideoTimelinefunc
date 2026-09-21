@@ -1,0 +1,177 @@
+﻿@model IEnumerable<VideoTimelineApp.Models.VideoSession>
+@{
+    ViewBag.Title = "Thư viện Video";
+}
+
+<div class="page-home">
+
+    <!-- ── Upload Card ── -->
+    <section class="upload-card card">
+        <h2 class="section-title">📂 Upload video mới</h2>
+        @using (Html.BeginForm("Upload", "Home", FormMethod.Post,
+                    new { enctype = "multipart/form-data", id = "upload-form" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="upload-fields">
+                <div class="field-group">
+                    <label class="field-label" for="title">Tên video</label>
+                    <input class="field-input" type="text" id="title" name="title"
+                           placeholder="Để trống sẽ dùng tên file" maxlength="255" />
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="file">Chọn file video</label>
+                    <div id="drop-zone" class="drop-zone">
+                        <span class="drop-icon">🎬</span>
+                        <p>Kéo thả hoặc <span class="drop-link" onclick="document.getElementById('file').click()">bấm chọn file</span></p>
+                        <p class="drop-hint">MP4 · MOV · MKV · AVI · WEBM – tối đa 500 MB</p>
+                        <p class="drop-chosen" id="chosen-name" style="display:none"></p>
+                        <input type="file" id="file" name="file" accept="video/*" style="display:none"
+                               onchange="onFileChosen(this)" />
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-upload" id="upload-btn">
+                ⬆️ Upload & Mở Timeline
+            </button>
+        }
+        <div class="upload-progress" id="upload-progress" style="display:none">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <p class="progress-text">Đang upload…</p>
+        </div>
+    </section>
+
+    <!-- ── Video Library ── -->
+    <section>
+        <h2 class="section-title">📚 Thư viện video (@Model.Count() video)</h2>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <span>🎞</span>
+                <p>Chưa có video nào. Hãy upload video đầu tiên!</p>
+            </div>
+        }
+        else
+        {
+            <div class="video-grid">
+                @foreach (var v in Model)
+                {
+                    <div class="video-card">
+                        <div class="vc-header">
+                            <span class="vc-icon">🎬</span>
+                            <div class="vc-meta">
+                                <div class="vc-title" title="@v.OriginalFileName">@v.Title</div>
+                                <div class="vc-sub">@v.OriginalFileName</div>
+                            </div>
+                        </div>
+                        <div class="vc-stats">
+                            <div class="vc-stat">
+                                <span class="vc-stat-lbl">Thời lượng</span>
+                                <span class="vc-stat-val">@(v.Duration > 0 ? FormatDuration(v.Duration) : "--:--")</span>
+                            </div>
+                            <div class="vc-stat">
+                                <span class="vc-stat-lbl">Kích thước</span>
+                                <span class="vc-stat-val">@FormatSize(v.FileSize)</span>
+                            </div>
+                            <div class="vc-stat">
+                                <span class="vc-stat-lbl">Đoạn đánh dấu</span>
+                                <span class="vc-stat-val">@v.Segments.Count đoạn</span>
+                            </div>
+                            <div class="vc-stat">
+                                <span class="vc-stat-lbl">Upload lúc</span>
+                                <span class="vc-stat-val">@v.UploadedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </div>
+                        @if (v.Segments.Any())
+                        {
+                            <div class="vc-seg-badges">
+                                @foreach (var s in v.Segments.Take(5))
+                                {
+                                    <span class="seg-badge-mini @(s.Type == "incident" ? "badge-inc" : "badge-nor")"
+                                          style="border-color:@s.Color"
+                                          title="@(string.IsNullOrEmpty(s.Label) ? "Chưa đặt tên" : s.Label): @FormatDuration(s.StartTime) → @FormatDuration(s.EndTime)">
+                                        @(s.Type == "incident" ? "⚠️" : "🏷") @FormatDuration(s.StartTime)
+                                    </span>
+                                }
+                                @if (v.Segments.Count > 5)
+                                {
+                                    <span class="seg-badge-mini">+@(v.Segments.Count - 5) nữa</span>
+                                }
+                            </div>
+                        }
+                        <div class="vc-actions">
+                            <a href="@Url.Action("Player","Video", new { id = v.Id })"
+                               class="btn btn-open">▶ Mở Timeline</a>
+                            @using (Html.BeginForm("Delete", "Home", new { id = v.Id },
+                                        FormMethod.Post, new { style = "display:inline" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-del-video"
+                                        onclick="return confirm('Xoá video và tất cả đoạn đánh dấu?')">🗑</button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+</div>
+
+@functions {
+    string FormatDuration(double sec)
+    {
+        if (sec <= 0) return "--:--";
+        int h = (int)(sec / 3600);
+        int m = (int)((sec % 3600) / 60);
+        int s = (int)(sec % 60);
+        return h > 0
+            ? string.Format("{0}:{1:D2}:{2:D2}", h, m, s)
+            : string.Format("{0:D2}:{1:D2}", m, s);
+    }
+    string FormatSize(long bytes)
+    {
+        if (bytes >= 1073741824) return string.Format("{0:F1} GB", bytes / 1073741824.0);
+        if (bytes >= 1048576)    return string.Format("{0:F1} MB", bytes / 1048576.0);
+        if (bytes >= 1024)       return string.Format("{0:F0} KB", bytes / 1024.0);
+        return bytes + " B";
+    }
+}
+
+@section Scripts {
+<script>
+function onFileChosen(input) {
+    if (!input.files.length) return;
+    var name = input.files[0].name;
+    document.getElementById('chosen-name').textContent = '📎 ' + name;
+    document.getElementById('chosen-name').style.display = 'block';
+    if (!document.getElementById('title').value)
+        document.getElementById('title').value = name.replace(/\.[^.]+$/, '');
+}
+
+// Drag & drop on upload zone
+var dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('dz-over'); });
+dz.addEventListener('dragleave', function() { dz.classList.remove('dz-over'); });
+dz.addEventListener('drop', function(e) {
+    e.preventDefault(); dz.classList.remove('dz-over');
+    var fi = document.getElementById('file');
+    fi.files = e.dataTransfer.files;
+    onFileChosen(fi);
+});
+
+// Show progress on submit
+document.getElementById('upload-form').addEventListener('submit', function() {
+    var fi = document.getElementById('file');
+    if (!fi.files.length) return;
+    document.getElementById('upload-btn').disabled = true;
+    document.getElementById('upload-progress').style.display = 'block';
+    // Fake progress animation (real progress requires XHR)
+    var w = 0;
+    var t = setInterval(function() {
+        w = Math.min(w + Math.random() * 8, 90);
+        document.getElementById('progress-fill').style.width = w + '%';
+    }, 300);
+});
+</script>
+}

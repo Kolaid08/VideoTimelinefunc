@@ -1,0 +1,153 @@
+﻿@model VideoTimelineApp.ViewModels.PlayerViewModel
+@using Newtonsoft.Json
+@{
+    ViewBag.Title = Model.Session.Title;
+
+    // Serialize initial segments from DB → passed to JS as window.INIT_SEGMENTS
+    var initSegs = Model.Session.Segments
+        .OrderBy(s => s.StartTime)
+        .Select(s => new {
+            id        = s.Id,
+            label     = s.Label,
+            startTime = s.StartTime,
+            endTime   = s.EndTime,
+            duration  = s.EndTime - s.StartTime,
+            type      = s.Type,
+            color     = s.Color
+        });
+    string initSegsJson = JsonConvert.SerializeObject(initSegs);
+}
+
+<div class="player-page">
+    <!-- ── Breadcrumb ── -->
+    <div class="breadcrumb">
+        <a href="@Url.Action("Index","Home")">← Thư viện video</a>
+        <span>/ @Model.Session.Title</span>
+    </div>
+
+    <!-- ── App Layout ── -->
+    <div id="app">
+
+        <!-- VIDEO -->
+        <div id="sec-video">
+            <video id="video" controls playsinline preload="metadata">
+                <source src="@Model.VideoUrl" />
+                Trình duyệt không hỗ trợ phát video.
+            </video>
+        </div>
+
+        <!-- CONTROLS PANEL (right col on desktop, 2nd on mobile) -->
+        <div id="sec-controls" class="card">
+
+            <!-- Type selector -->
+            <div class="ctrl-block">
+                <div class="ctrl-label">Loại đoạn</div>
+                <div class="type-row">
+                    <button class="type-btn on-normal"  id="type-normal"   onclick="setType('normal')">🏷 Bình thường</button>
+                    <button class="type-btn"            id="type-incident" onclick="setType('incident')">⚠️ Sự cố</button>
+                </div>
+            </div>
+
+            <!-- Label -->
+            <div class="ctrl-block">
+                <div class="ctrl-label">Nhãn đoạn</div>
+                <input class="field-input" id="label-input" type="text"
+                       placeholder="Tên đoạn (tuỳ chọn)" maxlength="60" />
+            </div>
+
+            <!-- Selection display -->
+            <div class="ctrl-block">
+                <div class="ctrl-label">Thời gian đã chọn</div>
+                <div class="sel-grid">
+                    <div class="sel-box"><div class="sl">Điểm đầu</div><div class="sv" id="sel-s">--:--</div></div>
+                    <div class="sel-box"><div class="sl">Điểm cuối</div><div class="sv" id="sel-e">--:--</div></div>
+                    <div class="sel-box"><div class="sl">Độ dài</div><div class="sv" id="sel-d">--:--</div></div>
+                </div>
+                <div class="overlap-warn" id="overlap-warn" style="display:none">❌ Đè lên đoạn đã có!</div>
+            </div>
+
+            <!-- Mark buttons -->
+            <div class="ctrl-block">
+                <div class="mark-row">
+                    <button class="btn btn-start" id="btn-set-start">📍 Đặt điểm đầu</button>
+                    <button class="btn btn-end"   id="btn-set-end"  >🏁 Đặt điểm cuối</button>
+                </div>
+                <div class="shortcut-hint" style="margin-top:8px">
+                    Phím tắt: <b>S</b> = điểm đầu &nbsp;·&nbsp; <b>E</b> = điểm cuối
+                </div>
+            </div>
+
+            <!-- Saving indicator -->
+            <div id="saving-indicator" style="display:none;text-align:center;font-size:.8rem;color:#94a3b8">
+                ⏳ Đang lưu…
+            </div>
+        </div>
+
+        <!-- TIMELINE -->
+        <div id="sec-timeline" class="card">
+            <div class="tl-top">
+                <span class="tl-label-text">📍 Click để tua · Tô màu = đoạn đã đánh dấu</span>
+                <span class="tl-time"><span id="ct-disp">00:00</span> / <span id="dur-disp">--:--</span></span>
+            </div>
+            <div id="timeline-wrap">
+                <div id="track-bg"></div>
+                <div id="pending-ind"></div>
+                <div id="playhead" style="left:0"></div>
+            </div>
+            <div id="ticks"></div>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div id="sec-toolbar" class="card">
+            <div class="toolbar">
+                <button class="btn btn-play"   id="btn-play">▶ Play/Pause</button>
+                <button class="btn btn-undo"   id="btn-undo">↩ Undo</button>
+                <button class="btn btn-clear"  id="btn-clear">🗑 Xoá tất cả</button>
+                <button class="btn btn-export" id="btn-export">📋 Xuất JSON</button>
+            </div>
+            <div class="shortcut-hint" style="margin-top:8px">
+                Space: play/pause &nbsp;·&nbsp; ← →: ±5 giây
+            </div>
+        </div>
+
+        <!-- STATS + SEGMENT LIST -->
+        <div id="sec-stats">
+            <div class="stats-boxes">
+                <div class="stat-box"><div class="sl">Tổng đoạn</div><div class="sv" id="st-count">0</div></div>
+                <div class="stat-box"><div class="sl">⚠️ Sự cố</div><div class="sv" id="st-inc">0</div></div>
+                <div class="stat-box"><div class="sl">Tổng thời gian</div><div class="sv" id="st-total">0:00</div></div>
+                <div class="stat-box"><div class="sl">% đã chọn</div><div class="sv" id="st-pct">0%</div></div>
+            </div>
+            <div class="card">
+                <div class="ctrl-label" style="margin-bottom:10px">📋 Danh sách đoạn</div>
+                <div class="seg-cards" id="seg-list"></div>
+            </div>
+        </div>
+
+    </div><!-- #app -->
+</div>
+
+<!-- Edit label modal -->
+<div id="edit-modal">
+    <div class="modal-box">
+        <div class="modal-title">✏️ Chỉnh sửa nhãn đoạn</div>
+        <input class="field-input" id="edit-input" type="text" placeholder="Nhập nhãn mới" maxlength="60" />
+        <div class="modal-row">
+            <button class="modal-btn modal-save"   id="modal-save">💾 Lưu</button>
+            <button class="modal-btn modal-cancel" id="modal-cancel">Huỷ</button>
+        </div>
+    </div>
+</div>
+
+<div id="tooltip"></div>
+<div id="toast"></div>
+
+@section Scripts {
+<script>
+    // Seed data from server (avoids initial fetch round-trip)
+    window.VIDEO_ID        = @Model.Session.Id;
+    window.INIT_SEGMENTS   = @Html.Raw(initSegsJson);
+    window.VIDEO_DURATION  = @Model.Session.Duration;
+</script>
+<script src="~/Scripts/timeline.js"></script>
+}
