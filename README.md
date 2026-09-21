@@ -1,116 +1,116 @@
 # Video Timeline Marker
 
-He thong Web Application ho tro danh dau, phan tich va quan ly cac moc thoi gian trong video dua tren nen tang ASP.NET MVC 5, Entity Framework 6 va SQL Server LocalDB.
+Hệ thống ứng dụng web hỗ trợ đánh dấu, phân tích và quản lý các mốc thời gian trong video, được xây dựng trên nền tảng ASP.NET MVC 5, Entity Framework 6 và SQL Server LocalDB.
 
-## 1. Gioi thieu tong quan
+## 1. Giới thiệu tổng quan
 
-Ung dung cho phep nguoi dung tai len cac video, tu dong nhan dang thoi luong va tao truc thoi gian tuong ung. Nguoi dung co the danh dau cac khoang thoi gian (segment), phan loai giua cac thao tac binh thuong va cac su co / thao tac thua, dat nhan chu thich va xuat bao cao du lieu duoi dinh dang JSON.
+Ứng dụng cho phép người dùng tải lên các video, hệ thống tự động nhận diện thời lượng và tạo trục thời gian tương ứng. Người dùng có thể đánh dấu các khoảng thời gian (segment), phân loại giữa thao tác chuẩn và sự cố hoặc thao tác thừa, đặt nhãn chú thích và xuất dữ liệu thống kê dưới định dạng JSON.
 
-Tat ca thong tin video va cac doan danh dau duoc luu tru lau dai trong co so du lieu SQL Server LocalDB.
+Toàn bộ dữ liệu video và các đoạn đánh dấu được lưu trữ lâu dài trong cơ sở dữ liệu SQL Server LocalDB.
 
-## 2. Yeu cau he thong
+## 2. Yêu cầu hệ thống
 
-- He dieu hanh: Windows 10 hoac Windows 11.
-- Moi truong phat trien: Visual Studio 2019, 2022 hoac phien ban moi hon (da cai dat workload ASP.NET and web development).
-- .NET Framework: 4.7.2 tro len (tuong thich san tren Windows).
-- Co so du lieu: SQL Server LocalDB (mac dinh di kem Visual Studio).
+- Hệ điều hành: Windows 10 hoặc Windows 11.
+- Môi trường phát triển: Visual Studio 2019, 2022 hoặc mới hơn (đã cài đặt workload ASP.NET and web development).
+- .NET Framework: Phiên bản 4.7.2 trở lên (mặc định có sẵn trên Windows).
+- Cơ sở dữ liệu: SQL Server LocalDB (đi kèm sẵn khi cài đặt Visual Studio).
 
-## 3. Huong dan cai dat va chay ung dung
+## 3. Hướng dẫn cài đặt và khởi chạy ứng dụng
 
-### Cach 1: Chay truc tiep bang Visual Studio
+### Cách 1: Chạy trực tiếp bằng Visual Studio
 
-1. Mo tap tin VideoTimelineApp.sln bang Visual Studio.
-2. Nhan chuot phai vao Solution trong cua so Solution Explorer, chon "Restore NuGet Packages" (hoac Visual Studio se tu dong khoi phuc cac thu vien can thiet khi build).
-3. Nhan phim F5 (hoac Ctrl + F5 de chay khong debug).
-4. He thong se tu dong khoi tao co so du lieu VideoTimelineDb trong SQL Server LocalDB o lan khoi dong dau tien.
+1. Mở tập tin VideoTimelineApp.sln bằng Visual Studio.
+2. Nhấp chuột phải vào Solution trong cửa sổ Solution Explorer, chọn "Restore NuGet Packages" để tải các thư viện cần thiết.
+3. Nhấn phím F5 (hoặc tổ hợp Ctrl + F5 để chạy không debug).
+4. Hệ thống sẽ tự động khởi tạo cơ sở dữ liệu VideoTimelineDb trong SQL Server LocalDB ở lần chạy đầu tiên.
 
-### Cach 2: Khoi phuc goi thu vien bang script PowerShell
+### Cách 2: Khôi phục gói thư viện bằng PowerShell
 
-1. Mo PowerShell tai thu muc goc cua du an.
-2. Chay lenh:
+1. Mở PowerShell tại thư mục gốc của dự án.
+2. Chạy lệnh:
    powershell -ExecutionPolicy Bypass -File .\setup.ps1
-3. Mo VideoTimelineApp.sln va nhan F5 de bat dau su dung.
+3. Mở VideoTimelineApp.sln trong Visual Studio và nhấn F5 để bắt đầu sử dụng.
 
-## 4. Huong dan su dung chi tiet
+## 4. Hướng dẫn sử dụng chi tiết
 
-### 4.1. Quan ly thu vien video (Trang chu)
+### 4.1. Quản lý thư viện video (Trang chủ)
 
-- Tai len video moi:
-  - Nhap tieu de video vao o "Ten video" (neu de trong, he thong se tu dong lay ten file goc).
-  - Keo tha tap tin video vao khung nhan file hoac bam vao "bam chon file".
-  - Cac dinh dang duoc ho tro: MP4, MOV, MKV, AVI, WEBM (dung luong toi da 500 MB).
-  - Nhan nut "Upload & Mo Timeline" de tien hanh tai len.
-- Xem danh sach video:
-  - Cac video da tai len se xuat hien duoi dang the (card) trong muc "Thu vien video".
-  - Thong tin hien thi gom: thoi luong, dung luong, so doan da danh dau, thoi diem upload va ban xem truoc cac moc thoi gian.
-- Mo giao dien danh dau: Nhan nut "Mo Timeline" tai the video tuong ung.
-- Xoa video: Nhan nut thung rac de xoa ca file video vat ly tren may chu lan toan bo du lieu moc thoi gian lien quan trong co so du lieu.
+- Tải lên video mới:
+  - Nhập tên video vào ô "Tên video" (nếu để trống, hệ thống sẽ tự động dùng tên tập tin gốc).
+  - Kéo thả tập tin video vào khung nhận tập tin hoặc bấm vào "bấm chọn file".
+  - Các định dạng hỗ trợ: MP4, MOV, MKV, AVI, WEBM (dung lượng tối đa 500 MB).
+  - Nhấn nút "Upload & Mở Timeline" để tiến hành tải lên máy chủ.
+- Xem danh sách video:
+  - Các video đã tải lên sẽ hiển thị dưới dạng thẻ thông tin trong mục "Thư viện video".
+  - Thông tin hiển thị bao gồm: thời lượng, dung lượng tập tin, số đoạn đã đánh dấu, thời điểm tải lên và các nhãn đánh dấu xem trước.
+- Mở giao diện đánh dấu: Nhấn nút "Mở Timeline" trên thẻ video tương ứng.
+- Xoá video: Nhấn nút biểu tượng thùng rác để xoá tập tin video vật lý trên máy chủ và toàn bộ dữ liệu mốc thời gian liên quan trong cơ sở dữ liệu.
 
-### 4.2. Giao dien danh dau Timeline (Trang Player)
+### 4.2. Giao diện đánh dấu Timeline (Trang Player)
 
-1. Phat video va dieu khien:
-   - Su dung thanh dieu khien video mac dinh hoac bam nut "Play/Pause" tren thanh cong cu.
-   - Click truc tiep vao bat ky vi tri nao tren thanh thoi gian (Timeline) de tua den giay do.
-   - Khi re chuot tren thanh Timeline, tooltip se hien thi thoi gian tuong ung tai con tro.
+1. Phát video và điều khiển:
+   - Sử dụng thanh điều khiển video mặc định hoặc bấm nút "Play/Pause" trên thanh công cụ.
+   - Nhấp chuột trực tiếp vào bất kỳ vị trí nào trên thanh thời gian (Timeline) để tua video đến giây tương ứng.
+   - Khi rê chuột trên thanh Timeline, khung hiển thị nhỏ sẽ hiển thị chính xác thời gian tại vị trí con trỏ.
 
-2. Danh dau mot giai doan:
-   - Buoc 1: Chon loai doan:
-     - "Binh thuong": Danh dau cac thao tac dung, quy trinh chuan (mau sac tu dong phan bo tren thanh thoi gian).
-     - "Su co": Danh dau cac loi, su co hoac thao tac thua (hien thi vien do va hoa tiet soc cheo de de dang nhan dien).
-   - Buoc 2: Nhap chu thich vao o "Nhan doan" (khong bat buoc).
-   - Buoc 3: Phat video den thoi diem bat dau can ghi nhan, nhan nut "Dat diem dau" (hoac nhan phim S tren ban phim).
-   - Buoc 4: Cho video chay (hoac tua) den thoi diem ket thuc, nhan nut "Dat diem cuoi" (hoac nhan phim E tren ban phim).
-   - He thong se tu dong kiem tra va luu doan vao co so du lieu thong qua REST API.
+2. Đánh dấu một giai đoạn:
+   - Bước 1: Chọn loại đoạn:
+     - "Bình thường": Dùng để ghi nhận các thao tác đúng, quy trình chuẩn (màu sắc tự động thay đổi theo dải màu sắc nét).
+     - "Sự cố": Dùng để ghi nhận các lỗi, sự cố hoặc thao tác thừa (hiển thị màu đỏ kèm hoạ tiết sọc chéo).
+   - Bước 2: Nhập tên hoặc chú thích vào ô "Nhãn đoạn" (không bắt buộc).
+   - Bước 3: Phát video đến thời điểm bắt đầu cần đánh dấu, nhấn nút "Đặt điểm đầu" (hoặc nhấn phím S trên bàn phím).
+   - Bước 4: Cho video chạy đến thời điểm kết thúc, nhấn nút "Đặt điểm cuối" (hoặc nhấn phím E trên bàn phím).
+   - Hệ thống sẽ tự động kiểm tra tính hợp lệ và lưu đoạn vào cơ sở dữ liệu qua REST API.
 
-3. Co che chong chong cheo (Overlap Prevention):
-   - He thong khong cho phep tao cac doan de len nhau.
-   - Neu diem dau va diem cuoi du dinh chon nam trong pham vi cua mot doan da co san, he thong se canh bao mau do va chan luu de dam bao tinh chinh xac cua du lieu.
+3. Cơ chế chống đè mốc thời gian (Overlap Prevention):
+   - Hệ thống ngăn chặn việc tạo các đoạn đè lên nhau.
+   - Nếu khoảng thời gian dự định chọn bị trùng lặp với một đoạn đã tồn tại, hệ thống sẽ hiển thị cảnh báo màu đỏ và không cho phép lưu nhằm bảo đảm tính chính xác của dữ liệu.
 
-4. Chinh sua va quan ly doan:
-   - Chinh sua nhan: Nhan vao bieu tuong cay but tren the doan danh dau, nhap nhan moi trong hop thoai va bam Luu.
-   - Xoa tung doan: Nhan vao bieu tuong thung rac tren the doan can xoa.
-   - Hoan tac doan cuoi: Nhan nut "Undo" tren thanh cong cu.
-   - Xoa tat ca: Nhan nut "Xoa tat ca" tren thanh cong cu de lam moi lai toan bo Timeline cua video do.
+4. Chỉnh sửa và quản lý đoạn:
+   - Sửa nhãn đoạn: Nhấn vào biểu tượng cây bút chì trên thẻ đoạn tương ứng, nhập nhãn mới trong hộp thoại và bấm Lưu.
+   - Xoá từng đoạn: Nhấn vào biểu tượng thùng rác trên thẻ của đoạn cần xoá.
+   - Hoàn tác: Nhấn nút "Undo" trên thanh công cụ để xoá nhanh đoạn vừa tạo gần nhất.
+   - Xoá tất cả: Nhấn nút "Xoá tất cả" trên thanh công cụ để làm mới toàn bộ trục thời gian của video.
 
-5. Xuat du lieu (Export JSON):
-   - Nhan nut "Xuat JSON" tren thanh cong cu.
-   - He thong se tao mot file .json chua day du so lieu thong ke tong the (tong so doan, so su co, tong thoi gian ghi nhan, ty le bao phu tren tong do dai video) cung danh sach chi tiet tung doan theo tung moc giay cu the.
+5. Xuất dữ liệu báo cáo (Export JSON):
+   - Nhấn nút "Xuất JSON" trên thanh công cụ.
+   - Hệ thống sẽ tải xuống một tập tin .json chứa đầy đủ các chỉ số thống kê (tổng số đoạn, số lượng sự cố, tổng thời gian ghi nhận, tỷ lệ phần trăm bao phủ) và danh sách chi tiết từng đoạn theo giây bắt đầu, giây kết thúc và thời lượng.
 
-### 4.3. Cac phim tat ho tro
+### 4.3. Danh sách phím tắt
 
-- Phim Space: Phat hoac tam dung video (Play / Pause).
-- Phim S: Dat moc thoi gian bat dau tai vi tri hien tai cua video (Start Point).
-- Phim E: Dat moc thoi gian ket thuc va luu doan (End Point).
-- Phim Mui ten trai: Tua lui 5 giay.
-- Phim Mui ten phai: Tua tien 5 giay.
+- Phím Space: Phát hoặc tạm dừng video (Play / Pause).
+- Phím S: Đặt mốc thời gian bắt đầu tại vị trí hiện tại của video.
+- Phím E: Đặt mốc thời gian kết thúc và lưu đoạn.
+- Phím Mũi tên trái: Tua lùi 5 giây.
+- Phím Mũi tên phải: Tua tiến 5 giây.
 
-## 5. Cau truc ma nguon du an
+## 5. Cấu trúc mã nguồn dự án
 
 - App_Start:
-  - RouteConfig.cs: Cau hinh duong dan MVC.
-  - WebApiConfig.cs: Cau hinh REST API va dinh dang JSON (camelCase).
-  - FilterConfig.cs: Cau hinh bo loc loi toan cuc.
+  - RouteConfig.cs: Cấu hình điều hướng MVC.
+  - WebApiConfig.cs: Cấu hình REST API và định dạng dữ liệu trả về dạng JSON (camelCase).
+  - FilterConfig.cs: Cấu hình bộ lọc lỗi toàn cục.
 - Controllers:
-  - HomeController.cs: Xu ly hien thi danh sach video, tai len va xoa video.
-  - VideoController.cs: Xu ly hien thi trang Player va du lieu khoi tao.
-  - SegmentsApiController.cs: Xu ly cac thao tac RESTful CRUD cho segments (GET, POST, PUT, DELETE, PATCH).
+  - HomeController.cs: Quản lý danh sách video, xử lý tải lên và xoá video.
+  - VideoController.cs: Quản lý hiển thị trang phát video và nạp dữ liệu ban đầu.
+  - SegmentsApiController.cs: Cung cấp các điểm cuối RESTful API cho dữ liệu đoạn (GET, POST, PUT, DELETE, PATCH).
 - Models:
-  - VideoSession.cs: Thuc the luu thong tin video tai len.
-  - Segment.cs: Thuc the luu thong tin cac doan moc thoi gian.
+  - VideoSession.cs: Lớp thực thể lưu trữ thông tin video tải lên.
+  - Segment.cs: Lớp thực thể lưu trữ thông tin các đoạn mốc thời gian.
 - Data:
-  - AppDbContext.cs: DbContext cua Entity Framework 6, thiet lap quan he va xoa theo tang (Cascade Delete).
+  - AppDbContext.cs: Lớp ngữ cảnh Entity Framework 6, thiết lập cấu hình bảng và quan hệ xoá theo tầng (Cascade Delete).
 - Views:
-  - Home/Index.cshtml: Giao dien quan ly thu vien video.
-  - Video/Player.cshtml: Giao dien phat video va danh dau truc thoi gian.
-  - Shared/_Layout.cshtml: Giao dien khung giao dien toi (Dark Theme).
-- Content/Site.css: Toan bo dinh dang giao dien, thiet ke dap ung (Responsive) cho ca may tinh va thiet bi di dong.
-- Scripts/timeline.js: Toan bo logic xu ly phia client (dieu khien truc thoi gian, giao tiep voi API, xuat file).
-- uploads/videos: Thu muc luu tru file video vat ly cua nguoi dung.
+  - Home/Index.cshtml: Giao diện trang chủ và thư viện video.
+  - Video/Player.cshtml: Giao diện phát video và trục thời gian đánh dấu.
+  - Shared/_Layout.cshtml: Giao diện bố cục khung nền tối (Dark Theme).
+- Content/Site.css: Tập tin định kiểu toàn bộ ứng dụng, hỗ trợ giao diện tương thích (Responsive) trên cả máy tính và điện thoại.
+- Scripts/timeline.js: Tập tin kịch bản phía máy khách xử lý điều khiển trục thời gian, tương tác API và xuất tệp JSON.
+- uploads/videos: Thư mục lưu trữ các tập tin video vật lý của người dùng.
 
-## 6. Danh sach REST API
+## 6. Danh sách các điểm cuối REST API
 
-- GET /api/segments/{videoId}: Lay danh sach toan bo cac doan danh dau cua video.
-- POST /api/segments: Tao mot doan danh dau moi (co xac thuc chong de moc thoi gian o phia may chu).
-- PUT /api/segments/{id}: Cap nhat nhan chu thich cua doan theo ID.
-- DELETE /api/segments/{id}: Xoa doan khoi co so du lieu theo ID.
-- PATCH /api/segments/video/{videoId}/duration: Cap nhat thoi luong chuan xac cua video sau khi trinh duyet doc duoc thong tin metadata.
+- GET /api/segments/{videoId}: Lấy danh sách toàn bộ các đoạn đánh dấu thuộc về một video.
+- POST /api/segments: Tạo một đoạn đánh dấu mới (có kiểm tra chống đè mốc thời gian từ phía máy chủ).
+- PUT /api/segments/{id}: Cập nhật nhãn chú thích của đoạn theo ID.
+- DELETE /api/segments/{id}: Xoá đoạn khỏi cơ sở dữ liệu theo ID.
+- PATCH /api/segments/video/{videoId}/duration: Cập nhật thời lượng chính xác của video sau khi trình duyệt đọc thông tin từ tập tin.
