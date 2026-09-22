@@ -7,7 +7,17 @@
 
     <!-- ── Upload Card ── -->
     <section class="upload-card card">
-        <h2 class="section-title">📂 Upload video mới</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h2 class="section-title" style="margin-bottom:0">📂 Upload video mới</h2>
+            @if (ViewBag.CloudinaryConfigured == true)
+            {
+                <span style="font-size:0.75rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:4px 10px; border-radius:12px; font-weight:600;">☁️ Cloudinary: Đang hoạt động</span>
+            }
+            else
+            {
+                <span style="font-size:0.75rem; color:#f59e0b; background:rgba(245,158,11,0.12); padding:4px 10px; border-radius:12px; font-weight:600;" title="Nhập thông tin trong Web.config để bật lưu trữ Cloudinary">💻 Lưu cục bộ (Chưa cấu hình Cloudinary)</span>
+            }
+        </div>
         @using (Html.BeginForm("Upload", "Home", FormMethod.Post,
                     new { enctype = "multipart/form-data", id = "upload-form" }))
         {
@@ -61,7 +71,17 @@
                             <span class="vc-icon">🎬</span>
                             <div class="vc-meta">
                                 <div class="vc-title" title="@v.OriginalFileName">@v.Title</div>
-                                <div class="vc-sub">@v.OriginalFileName</div>
+                                <div class="vc-sub">
+                                    @if (!string.IsNullOrEmpty(v.VideoUrl))
+                                    {
+                                        <span style="color:#38bdf8; font-weight:600">☁️ Cloud</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:#94a3b8; font-weight:600">💻 Local</span>
+                                    }
+                                    · @v.OriginalFileName
+                                </div>
                             </div>
                         </div>
                         <div class="vc-stats">
@@ -160,18 +180,121 @@ dz.addEventListener('drop', function(e) {
     onFileChosen(fi);
 });
 
-// Show progress on submit
-document.getElementById('upload-form').addEventListener('submit', function() {
+var isCloudinary = @(ViewBag.CloudinaryConfigured == true ? "true" : "false");
+
+// Show progress & handle direct Client-Side Upload
+document.getElementById('upload-form').addEventListener('submit', function(e) {
     var fi = document.getElementById('file');
     if (!fi.files.length) return;
-    document.getElementById('upload-btn').disabled = true;
-    document.getElementById('upload-progress').style.display = 'block';
-    // Fake progress animation (real progress requires XHR)
-    var w = 0;
-    var t = setInterval(function() {
-        w = Math.min(w + Math.random() * 8, 90);
-        document.getElementById('progress-fill').style.width = w + '%';
-    }, 300);
+
+    // Fallback: If Cloudinary is not configured, submit standard form to local IIS
+    if (!isCloudinary) {
+        document.getElementById('upload-btn').disabled = true;
+        document.getElementById('upload-progress').style.display = 'block';
+        return;
+    }
+
+    // ── Client-Side Direct Upload to Cloudinary ──
+    e.preventDefault();
+    var file = fi.files[0];
+    var title = document.getElementById('title').value;
+
+    var btn   = document.getElementById('upload-btn');
+    var prog  = document.getElementById('upload-progress');
+    var fill  = document.getElementById('progress-fill');
+    var ptext = document.querySelector('.progress-text');
+
+    btn.disabled = true;
+    prog.style.display = 'block';
+    fill.style.width = '5%';
+    ptext.textContent = 'Đang khởi tạo chứng thực...';
+
+    // Step 1: Get secure timestamped signature from server (10ms)
+    fetch('@Url.Action("GetUploadSignature", "Home")')
+        .then(function(res) { return res.json(); })
+        .then(function(sigRes) {
+            if (!sigRes.success || !sigRes.data) {
+                throw new Error(sigRes.message || 'Không lấy được chữ ký Cloudinary!');
+            }
+
+            var sig = sigRes.data;
+            ptext.textContent = 'Đang tải video trực tiếp lên Cloudinary (0%)...';
+
+            // Step 2: Upload file DIRECTLY from browser to Cloudinary CDN (bypassing ngrok completely)
+            var formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', sig.apiKey);
+            formData.append('timestamp', sig.timestamp);
+            formData.append('signature', sig.signature);
+            formData.append('folder', sig.folder);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + sig.cloudName + '/video/upload', true);
+
+            xhr.upload.onprogress = function(pe) {
+                if (pe.lengthComputable) {
+                    var pct = Math.round((pe.loaded / pe.total) * 95);
+                    fill.style.width = pct + '%';
+                    ptext.textContent = 'Đang tải video trực tiếp lên Cloudinary (' + pct + '%)...';
+                }
+            };
+
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    fill.style.width = '100%';
+                    ptext.textContent = 'Đã tải xong! Đang lưu thông tin vào CSDL...';
+
+                    var cRes = JSON.parse(xhr.responseText);
+
+                    // Step 3: Send tiny JSON metadata to server to save in SQL Server
+                    fetch('@Url.Action("SaveUploadedVideo", "Home")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title,
+                            originalFileName: file.name,
+                            videoUrl: cRes.secure_url,
+                            publicId: cRes.public_id,
+                            duration: cRes.duration || 0,
+                            fileSize: cRes.bytes || file.size
+                        })
+                    })
+                    .then(function(sRes) { return sRes.json(); })
+                    .then(function(saved) {
+                        if (saved.success && saved.redirectUrl) {
+                            window.location.href = saved.redirectUrl;
+                        } else {
+                            throw new Error(saved.message || 'Lỗi lưu vào CSDL!');
+                        }
+                    })
+                    .catch(function(err) {
+                        alert('Lỗi lưu CSDL: ' + err.message);
+                        btn.disabled = false;
+                        prog.style.display = 'none';
+                    });
+                } else {
+                    var errObj = {};
+                    try { errObj = JSON.parse(xhr.responseText); } catch(err) {}
+                    var errMsg = (errObj.error && errObj.error.message) ? errObj.error.message : ('Lỗi HTTP ' + xhr.status);
+                    alert('Lỗi tải lên Cloudinary: ' + errMsg);
+                    btn.disabled = false;
+                    prog.style.display = 'none';
+                }
+            };
+
+            xhr.onerror = function() {
+                alert('Lỗi kết nối mạng khi tải lên Cloudinary!');
+                btn.disabled = false;
+                prog.style.display = 'none';
+            };
+
+            xhr.send(formData);
+        })
+        .catch(function(err) {
+            alert('Lỗi: ' + err.message);
+            btn.disabled = false;
+            prog.style.display = 'none';
+        });
 });
 </script>
 }

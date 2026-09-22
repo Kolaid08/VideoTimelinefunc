@@ -21,9 +21,17 @@ namespace VideoTimelineApp.Controllers
 
             if (session == null) return HttpNotFound();
 
-            string relPath = WebConfigurationManager.AppSettings["VideoUploadPath"]
-                                 .Replace("~", string.Empty);
-            string videoUrl = relPath + "/" + session.StoredFileName;
+            string videoUrl;
+            if (!string.IsNullOrEmpty(session.VideoUrl))
+            {
+                videoUrl = session.VideoUrl;
+            }
+            else
+            {
+                string relPath = WebConfigurationManager.AppSettings["VideoUploadPath"]
+                                     .Replace("~", string.Empty);
+                videoUrl = relPath + "/" + session.StoredFileName;
+            }
 
             var vm = new PlayerViewModel
             {

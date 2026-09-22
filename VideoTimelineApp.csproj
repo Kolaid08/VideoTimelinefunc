@@ -106,6 +106,12 @@
     <Reference Include="Microsoft.Web.Infrastructure">
       <HintPath>packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
     </Reference>
+    <Reference Include="CloudinaryDotNet">
+      <HintPath>packages\CloudinaryDotNet.1.29.3\lib\net452\CloudinaryDotNet.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <HintPath>packages\System.Runtime.InteropServices.RuntimeInformation.4.3.0\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- C# Source Files -->
   <ItemGroup>
@@ -118,6 +124,7 @@
     <Compile Include="Data\AppDbContext.cs" />
     <Compile Include="Models\Segment.cs" />
     <Compile Include="Models\VideoSession.cs" />
+    <Compile Include="Services\CloudinaryService.cs" />
     <Compile Include="ViewModels\PlayerViewModel.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -141,6 +148,8 @@
     <Content Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </Content>
+    <Content Include="AppSettingsSecrets.config" />
+    <Content Include="AppSettingsSecrets.config.example" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="uploads\videos\" />

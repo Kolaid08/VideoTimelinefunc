@@ -1,4 +1,4 @@
-# Video Timeline Marker
+﻿# Video Timeline Marker
 
 Hệ thống ứng dụng web hỗ trợ đánh dấu, phân tích và quản lý các mốc thời gian trong video, được xây dựng trên nền tảng ASP.NET MVC 5, Entity Framework 6 và SQL Server LocalDB.
 
@@ -105,7 +105,8 @@ Toàn bộ dữ liệu video và các đoạn đánh dấu được lưu trữ l
   - Shared/_Layout.cshtml: Giao diện bố cục khung nền tối (Dark Theme).
 - Content/Site.css: Tập tin định kiểu toàn bộ ứng dụng, hỗ trợ giao diện tương thích (Responsive) trên cả máy tính và điện thoại.
 - Scripts/timeline.js: Tập tin kịch bản phía máy khách xử lý điều khiển trục thời gian, tương tác API và xuất tệp JSON.
-- uploads/videos: Thư mục lưu trữ các tập tin video vật lý của người dùng.
+- Services/CloudinaryService.cs: Lớp dịch vụ xử lý tải video lên Cloudinary theo cơ chế chia nhỏ luồng dữ liệu (chunked upload) và xoá video trên đám mây.
+- uploads/videos: Thư mục lưu trữ các tập tin video vật lý của người dùng khi chạy ở chế độ cục bộ.
 
 ## 6. Danh sách các điểm cuối REST API
 
@@ -114,3 +115,16 @@ Toàn bộ dữ liệu video và các đoạn đánh dấu được lưu trữ l
 - PUT /api/segments/{id}: Cập nhật nhãn chú thích của đoạn theo ID.
 - DELETE /api/segments/{id}: Xoá đoạn khỏi cơ sở dữ liệu theo ID.
 - PATCH /api/segments/video/{videoId}/duration: Cập nhật thời lượng chính xác của video sau khi trình duyệt đọc thông tin từ tập tin.
+
+## 7. Cấu hình lưu trữ đám mây Cloudinary
+
+Mặc định, ứng dụng hỗ trợ cơ chế lưu trữ kép linh hoạt:
+- Nếu chưa cấu hình Cloudinary: Ứng dụng tự động chuyển sang chế độ lưu trữ cục bộ vào thư mục uploads/videos/.
+- Khi muốn kích hoạt lưu trữ đám mây Cloudinary:
+  1. Đăng ký tài khoản miễn phí tại trang web cloudinary.com.
+  2. Lấy 3 thông số trong trang điều khiển Dashboard: Cloud Name, API Key, API Secret.
+  3. Mở tập tin Web.config và điền các giá trị vào phần appSettings:
+     - CloudinaryCloudName: Nhập tên Cloud Name của bạn.
+     - CloudinaryApiKey: Nhập mã API Key.
+     - CloudinaryApiSecret: Nhập mã API Secret.
+  4. Khởi động lại ứng dụng. Toàn bộ video tải lên từ thời điểm này sẽ được stream trực tiếp lên Cloudinary, không tốn dung lượng ổ cứng máy chủ và phát qua CDN với tốc độ tối ưu.

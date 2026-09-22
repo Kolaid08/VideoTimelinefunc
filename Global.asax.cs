@@ -16,6 +16,9 @@ namespace VideoTimelineApp
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
 
+            // Enforce modern TLS 1.2 security protocol for HTTPS connections (Cloudinary requirement)
+            System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls11;
+
             // Automatically create database on LocalDB if it does not exist
             Database.SetInitializer(new CreateDatabaseIfNotExists<AppDbContext>());
         }
